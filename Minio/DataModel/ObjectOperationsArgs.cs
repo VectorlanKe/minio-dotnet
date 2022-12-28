@@ -215,6 +215,53 @@ public class PresignedGetObjectArgs : ObjectArgs<PresignedGetObjectArgs>
     }
 }
 
+public class PresignedGetFolderPathArgs : ObjectArgs<PresignedGetFolderPathArgs>
+{
+    public PresignedGetFolderPathArgs()
+    {
+        RequestMethod = HttpMethod.Get;
+    }
+
+    internal int Expiry { get; set; }
+    internal DateTime? RequestDate { get; set; }
+    internal string FolderPath { get; set; }
+
+    internal override void Validate()
+    {
+        base.Validate();
+        if (!utils.IsValidExpiry(Expiry))
+            throw new InvalidExpiryRangeException("expiry range should be between 1 and " +
+                                                  Constants.DefaultExpiryTime);
+        if (string.IsNullOrWhiteSpace(FolderPath) || FolderPath.LastIndexOf('/') + 1 != FolderPath.Length)
+            throw new InvalidObjectNameException(FolderPath, "文件夹路径需以'/'结尾");
+        FolderPath = string.Concat("/",BucketName, "/", FolderPath.TrimStart('/'));
+    }
+
+    public PresignedGetFolderPathArgs WithExpiry(int expiry)
+    {
+        Expiry = expiry;
+        return this;
+    }
+
+    public PresignedGetFolderPathArgs WithRequestDate(DateTime? d)
+    {
+        RequestDate = d;
+        return this;
+    }
+    /// <summary>
+    /// 设置分享文件夹
+    /// </summary>
+    /// <param name="folderPath">不包含桶名</param>
+    /// <returns></returns>
+    public PresignedGetFolderPathArgs WithFolderPath(string folderPath)
+    {
+        FolderPath = folderPath;
+        //添加默认值绕过Object Name校验
+        ObjectName = "default";
+        return this;
+    }
+}
+
 public class StatObjectArgs : ObjectConditionalQueryArgs<StatObjectArgs>
 {
     public StatObjectArgs()

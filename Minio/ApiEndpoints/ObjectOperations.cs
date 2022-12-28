@@ -201,6 +201,24 @@ public partial class MinioClient : IObjectOperations
         return authenticator.PresignURL(requestMessageBuilder, args.Expiry, Region, SessionToken, args.RequestDate);
     }
 
+    /// <summary>
+    ///  Presigned get url - returns a presigned url to access an object's data without credentials.URL can have a maximum
+    ///     expiry of
+    ///     up to 7 days or a minimum of 1 second.Additionally, you can override a set of response headers using reqParams.
+    /// </summary>
+    /// <param name="uri">访问时使用的请求地址（参与签名影响访问）</param>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    public async Task<string> PresignedGetFolderPathAsync(string uri,PresignedGetFolderPathArgs args)
+    {
+        args.Validate();
+        var requestMessageBuilder = await CreateRequest(args).ConfigureAwait(false);
+        var authenticator = new V4Authenticator(Secure, AccessKey, SecretKey, Region,
+            SessionToken);
+        requestMessageBuilder.RequestUri=new Uri(uri);
+        string uriString = authenticator.PresignURL(requestMessageBuilder, args.Expiry, Region, SessionToken, args.RequestDate,args.FolderPath);
+        return new Uri(uriString).Query;
+    }
 
     /// <summary>
     ///     Presigned post policy

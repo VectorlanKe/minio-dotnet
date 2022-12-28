@@ -282,9 +282,10 @@ internal class V4Authenticator
     /// <param name="region">Region of storage</param>
     /// <param name="sessionToken">Value for session token</param>
     /// <param name="reqDate"> Optional requestBuilder date and time in UTC</param>
+    /// <param name="queryFolderPath"></param>
     /// <returns>Presigned url</returns>
     internal string PresignURL(HttpRequestMessageBuilder requestBuilder, int expires, string region = "",
-        string sessionToken = "", DateTime? reqDate = null)
+        string sessionToken = "", DateTime? reqDate = null, string queryFolderPath = "")
     {
         var signingDate = reqDate ?? DateTime.UtcNow;
 
@@ -310,7 +311,7 @@ internal class V4Authenticator
         requestQuery += "X-Amz-SignedHeaders=host";
 
         var presignUri = new UriBuilder(requestUri) { Query = requestQuery }.Uri;
-        var canonicalRequest = GetPresignCanonicalRequest(requestBuilder.Method, presignUri, headersToSign);
+        var canonicalRequest = GetPresignCanonicalRequest(requestBuilder.Method, presignUri, headersToSign, queryFolderPath);
         var headers = string.Concat(headersToSign.Select(p => $"&{p.Key}={utils.UrlEncode(p.Value)}"));
         var canonicalRequestBytes = Encoding.UTF8.GetBytes(canonicalRequest);
         var canonicalRequestHash = BytesToHex(ComputeSha256(canonicalRequestBytes));
@@ -321,7 +322,10 @@ internal class V4Authenticator
         var signature = BytesToHex(signatureBytes);
 
         // Return presigned url.
-        var signedUri = new UriBuilder(presignUri) { Query = $"{requestQuery}{headers}&X-Amz-Signature={signature}" };
+        var signedUri = new UriBuilder(presignUri)
+        {
+            Query = $"{requestQuery}{headers}{(string.IsNullOrWhiteSpace(queryFolderPath) ? string.Empty : $"&X-Amz-Folder-Path={Uri.EscapeDataString(queryFolderPath)}")}&X-Amz-Signature={signature}"
+        };
         if (signedUri.Uri.IsDefaultPort) signedUri.Port = -1;
         return Convert.ToString(signedUri);
     }
@@ -335,14 +339,15 @@ internal class V4Authenticator
     ///     X-Amz-Signature
     /// </param>
     /// <param name="headersToSign">The key-value of headers.</param>
+    /// <param name="folderPath"></param>
     /// <returns>Presigned canonical requestBuilder</returns>
     internal string GetPresignCanonicalRequest(HttpMethod requestMethod, Uri uri,
-        SortedDictionary<string, string> headersToSign)
+        SortedDictionary<string, string> headersToSign, string folderPath = "")
     {
         var canonicalStringList = new LinkedList<string>();
         canonicalStringList.AddLast(requestMethod.ToString());
 
-        var path = uri.AbsolutePath;
+        var path = string.IsNullOrWhiteSpace(folderPath) ? uri.AbsolutePath : folderPath;
 
         canonicalStringList.AddLast(path);
         var queryParams = uri.Query.TrimStart('?').Split('&').ToList();

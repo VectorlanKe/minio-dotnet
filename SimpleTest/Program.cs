@@ -23,7 +23,7 @@ namespace SimpleTest;
 
 public class Program
 {
-    private static void Main(string[] args)
+    private static  void Main(string[] args)
     {
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
                                                | SecurityProtocolType.Tls11
@@ -32,11 +32,18 @@ public class Program
         /// Note: s3 AccessKey and SecretKey needs to be added in App.config file
         /// See instructions in README.md on running examples for more information.
         var minio = new MinioClient()
-            .WithEndpoint("play.min.io")
-            .WithCredentials("Q3AM3UQ867SPQQA43P2F",
-                "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG")
-            .WithSSL()
+            .WithEndpoint("192.168.21.109:9000")
+            .WithCredentials("minioadmin",
+                "minioadmin")
+            .WithSSL(false)
             .Build();
+
+        string url = minio.PresignedGetFolderPathAsync("http://127.0.0.1:9000",new PresignedGetFolderPathArgs()
+            .WithBucket("test")
+            .WithFolderPath("test2/")
+            .WithExpiry(10_000))
+            .Result;
+
         var getListBucketsTask = minio.ListBucketsAsync();
 
         try

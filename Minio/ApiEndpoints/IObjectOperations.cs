@@ -270,6 +270,16 @@ public interface IObjectOperations
     Task<string> PresignedGetObjectAsync(PresignedGetObjectArgs args);
 
     /// <summary>
+    ///  Presigned get url - returns a presigned url to access an object's data without credentials.URL can have a maximum
+    ///     expiry of
+    ///     up to 7 days or a minimum of 1 second.Additionally, you can override a set of response headers using reqParams.
+    /// </summary>
+    /// <param name="uri">访问时使用的请求地址（参与签名影响访问）</param>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    Task<string> PresignedGetFolderPathAsync(string uri,PresignedGetFolderPathArgs args);
+
+    /// <summary>
     ///     Presigned post policy
     /// </summary>
     /// <param name="args">PresignedPostPolicyArgs Arguments object encapsulating Policy, Expiry, Region, </param>
